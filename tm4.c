@@ -28,6 +28,7 @@ int main() {
     WindowInfo windows[MAX_WINDOWS];
     int numWindows = 0;
     int currentWorkspace = 1;
+    int focusedWindow = -1; // Index of the currently focused window
     int screen;
 
     display = XOpenDisplay(NULL);
@@ -99,10 +100,34 @@ int main() {
             }
         }
 
+        // Handle FocusIn events
+        if (event.type == FocusIn) {
+            // Find the window that gained focus
+            for (int i = 0; i < numWindows; i++) {
+                if (windows[i].window == event.xfocus.window) {
+                    focusedWindow = i;
+                    break;
+                }
+            }
+        }
+
+        // Handle FocusOut events
+        if (event.type == FocusOut) {
+            // Reset focusedWindow when a window loses focus
+            focusedWindow = -1;
+        }
+
         // Redraw title bar and status bar
-        sprintf(titleBarText, "{Program Name: %s} [%d] [%d] [%d]",
-                (numWindows > 0) ? windows[numWindows - 1].title : "None",
-                (currentWorkspace == 1), (currentWorkspace == 2), (currentWorkspace == 3));
+        if (focusedWindow >= 0 && focusedWindow < numWindows) {
+            // Display title of focused window
+            sprintf(titleBarText, "{Program Name: %s} [%d] [%d] [%d]",
+                    windows[focusedWindow].title,
+                    (currentWorkspace == 1), (currentWorkspace == 2), (currentWorkspace == 3));
+        } else {
+            // No window is focused
+            sprintf(titleBarText, "{No Program Focused} [%d] [%d] [%d]",
+                    (currentWorkspace == 1), (currentWorkspace == 2), (currentWorkspace == 3));
+        }
         XDrawString(display, titleBar, gc, 10, 20, titleBarText, strlen(titleBarText));
         XDrawString(display, statusBar, gc, 10, 20, "Status Bar", 10);
     }
