@@ -12,7 +12,7 @@
 // Structure to store information about each window
 typedef struct {
     Window window;
-    char title[256];
+    char *title; // Change to char pointer
     int workspace;
 } WindowInfo;
 
@@ -83,6 +83,7 @@ int main() {
                     // Quit entire titling manager when Escape key is pressed
                     for (int i = 0; i < numWindows; i++) {
                         XDestroyWindow(display, windows[i].window);
+                        free(windows[i].title); // Free dynamically allocated memory
                     }
                     XDestroyWindow(display, titleBar);
                     XDestroyWindow(display, statusBar);
@@ -97,6 +98,24 @@ int main() {
                     break;
                 default:
                     break;
+            }
+        }
+
+        // Handle MapNotify events (window mapping)
+        if (event.type == MapNotify) {
+            // Find the window that was mapped
+            for (int i = 0; i < numWindows; i++) {
+                if (windows[i].window == event.xmap.window) {
+                    // Allocate memory for window title
+                    windows[i].title = (char *)malloc(256 * sizeof(char));
+                    if (windows[i].title == NULL) {
+                        fprintf(stderr, "Error: Could not allocate memory for window title.\n");
+                        exit(1);
+                    }
+                    // Retrieve window title and update the entry in windows array
+                    XFetchName(display, windows[i].window, &(windows[i].title));
+                    break;
+                }
             }
         }
 
